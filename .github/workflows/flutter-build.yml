@@ -16,7 +16,7 @@ on:
           - macos
 
 env:
-  FLUTTER_VERSION: "3.22.2"
+  FLUTTER_VERSION: "3.38.5"
   BUILD_NUMBER: 1
   BUILD_VERSION: "1.0.0"
 
