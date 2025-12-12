@@ -11,6 +11,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: my_app   # dhammaan commands-ka Flutter waxay ku ordaan my_app/
 
     steps:
       - name: Checkout source
@@ -23,15 +26,15 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-        working-directory: my_app
+
+      - name: Run tests
+        run: flutter test
 
       - name: Build APK (release)
         run: flutter build apk --release
-        working-directory: my_app
 
       - name: Build AppBundle (AAB release)
         run: flutter build appbundle --release
-        working-directory: my_app
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
