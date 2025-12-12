@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.10.0 <4.0.0'
+  sdk: '>=3.7.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -17,7 +17,6 @@ dependencies:
   audio_session: ^0.1.21
   just_audio: ^0.9.35
   record: ^5.0.1
-  flutter_audio_waveforms: ^4.4.0
   
   # File system
   path_provider: ^2.1.2
@@ -25,12 +24,6 @@ dependencies:
   
   # Date formatting
   intl: ^0.18.1
-  
-  # For sharing recordings
-  share_plus: ^8.2.0
-  
-  # For file handling
-  file_picker: ^6.1.4
 
 dev_dependencies:
   flutter_test:
@@ -39,8 +32,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  # Assets (haddii aad rabto)
-  assets:
-    # - assets/images/
-    # - assets/audio/
