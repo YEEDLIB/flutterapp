@@ -19,25 +19,28 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable   # version optional
+          channel: stable
 
       - name: Install dependencies
         run: flutter pub get
+        working-directory: my_app
 
       - name: Build APK (release)
         run: flutter build apk --release
+        working-directory: my_app
 
       - name: Build AppBundle (AAB release)
         run: flutter build appbundle --release
+        working-directory: my_app
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: my_app/build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: my_app/build/app/outputs/bundle/release/app-release.aab
