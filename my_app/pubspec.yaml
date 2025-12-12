@@ -1,11 +1,46 @@
+name: voice_recorder_app
+description: A Flutter voice recorder application
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Permissions
   permission_handler: ^11.0.1
+  
+  # Audio recording and playback
   audio_session: ^0.1.21
   just_audio: ^0.9.35
   record: ^5.0.1
+  flutter_audio_waveforms: ^4.4.0
+  
+  # File system
   path_provider: ^2.1.2
   path: ^1.8.3
+  
+  # Date formatting
   intl: ^0.18.1
-  flutter_audio_waveforms: ^4.4.0
+  
+  # For sharing recordings
+  share_plus: ^8.2.0
+  
+  # For file handling
+  file_picker: ^6.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Assets (haddii aad rabto)
+  assets:
+    # - assets/images/
+    # - assets/audio/
