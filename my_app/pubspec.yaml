@@ -1,19 +1,11 @@
-name: voice_recorder
-description: Simple Flutter voice recorder
-publish_to: "none"
-version: 1.0.0
-
-environment:
-  sdk: ">=3.3.0 <4.0.0"
-
 dependencies:
   flutter:
     sdk: flutter
-  record: ^5.0.4
-  just_audio: ^0.9.38
-  path_provider: ^2.1.4
-  permission_handler: ^11.3.1
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  permission_handler: ^11.0.1
+  audio_session: ^0.1.21
+  just_audio: ^0.9.35
+  record: ^5.0.1
+  path_provider: ^2.1.2
+  path: ^1.8.3
+  intl: ^0.18.1
+  flutter_audio_waveforms: ^4.4.0
