@@ -247,7 +247,8 @@ class _AudioRecorderHomeState extends State<AudioRecorderHome> {
                         child: Text(
                           '[Fiiro gaar ah: Duubista waa la kaydiyay, laakiin kuma jiraan qalab lagu dhegeysto. Ku dar package sida `audioplayers` haddii aad rabto.]',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.orange),
+                          style: FontStyle.italic,
+                          color: Colors.orange,
                         ),
                       ),
                     ],
