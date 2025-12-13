@@ -1,6 +1,8 @@
+import 'dart:async'; // 1. Soo import-garee Timer class-ka
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
+import 'package:record/record.dart' show Amplitude; // Soo import-garee Amplitude
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -35,6 +37,11 @@ class VoiceRecorderPage extends StatefulWidget {
 class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  
+  // 2. Ayaa ku dheji subscriptions-ka si aan u xannibino memory leaks
+  StreamSubscription<Amplitude>? _amplitudeSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+
   bool _isRecording = false;
   bool _isPlaying = false;
   String? _recordingPath;
@@ -69,6 +76,22 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
         final directory = await getApplicationDocumentsDirectory();
         final path = '${directory.path}/voice_recording_${DateTime.now().millisecondsSinceEpoch}.wav';
         
+        // 3. Samee listeners-ka ka hor inta aad bilowto recording
+        _durationSubscription = _audioRecorder.onDurationChanged.listen(
+          (duration) {
+            setState(() {
+              _recordingDuration = duration;
+            });
+          },
+        );
+
+        _amplitudeSubscription = _audioRecorder.onAmplitudeChanged.listen(
+          (amp) {
+            // Halkan waxaad ku dari kartaa code-ka uu muuqdo codka (visualization)
+            // Tusaale: print('Current amplitude: ${amp.current}');
+          },
+        );
+
         await _audioRecorder.start(
           const RecordConfig(
             encoder: AudioEncoder.wav,
@@ -82,24 +105,6 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
           _isRecording = true;
           _recordingPath = path;
         });
-
-        // Update recording duration
-        _audioRecorder.onAmplitudeChanged((amplitude) {
-          // You can use amplitude for visualization if needed
-        });
-        
-        Timer.periodic(const Duration(seconds: 1), (timer) async {
-          if (_isRecording) {
-            final duration = await _audioRecorder.getDuration();
-            if (duration != null) {
-              setState(() {
-                _recordingDuration = duration;
-              });
-            }
-          } else {
-            timer.cancel();
-          }
-        });
       }
     } catch (e) {
       debugPrint("Error starting recording: $e");
@@ -108,10 +113,17 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
 
   Future<void> _stopRecording() async {
     try {
+      // 4. Jooji listeners-ka marka recording la dhigayo
+      await _durationSubscription?.cancel();
+      await _amplitudeSubscription?.cancel();
+      _durationSubscription = null;
+      _amplitudeSubscription = null;
+
       final path = await _audioRecorder.stop();
       setState(() {
         _isRecording = false;
         _recordingPath = path;
+        _recordingDuration = Duration.zero; // Reset duration
       });
     } catch (e) {
       debugPrint("Error stopping recording: $e");
@@ -131,6 +143,9 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
   Future<void> _stopPlaying() async {
     try {
       await _audioPlayer.stop();
+      setState(() {
+        _position = Duration.zero;
+      });
     } catch (e) {
       debugPrint("Error stopping playback: $e");
     }
@@ -145,6 +160,9 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
 
   @override
   void dispose() {
+    // 5. Xannib subscriptions-ka iyo resources-ka marka widget la saaray
+    _durationSubscription?.cancel();
+    _amplitudeSubscription?.cancel();
     _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -161,7 +179,6 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Recording status and duration
             Text(
               _isRecording ? 'Recording...' : 'Not Recording',
               style: TextStyle(
@@ -172,12 +189,12 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
             ),
             const SizedBox(height: 20),
             Text(
+              // Show recording duration when recording, playback duration when playing
               _formatDuration(_isRecording ? _recordingDuration : _position),
               style: const TextStyle(fontSize: 48),
             ),
             const SizedBox(height: 40),
             
-            // Recording controls
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -200,7 +217,6 @@ class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
             
             const SizedBox(height: 40),
             
-            // List of recordings (if you want to add this feature)
             if (_recordingPath != null)
               Padding(
                 padding: const EdgeInsets.all(16.0),
