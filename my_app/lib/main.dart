@@ -1,121 +1,222 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const VoiceRecorderApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class VoiceRecorderApp extends StatelessWidget {
+  const VoiceRecorderApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Voice Recorder',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const VoiceRecorderPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class VoiceRecorderPage extends StatefulWidget {
+  const VoiceRecorderPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<VoiceRecorderPage> createState() => _VoiceRecorderPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _VoiceRecorderPageState extends State<VoiceRecorderPage> {
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  String? _recordingPath;
+  Duration _recordingDuration = Duration.zero;
+  Duration _position = Duration.zero;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
     });
+    
+    _audioPlayer.onPositionChanged.listen((position) {
+      setState(() {
+        _position = position;
+      });
+    });
+  }
+
+  Future<void> _requestPermissions() async {
+    await Permission.microphone.request();
+    await Permission.storage.request();
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      if (await _audioRecorder.hasPermission()) {
+        final directory = await getApplicationDocumentsDirectory();
+        final path = '${directory.path}/voice_recording_${DateTime.now().millisecondsSinceEpoch}.wav';
+        
+        await _audioRecorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.wav,
+            bitRate: 128000,
+            sampleRate: 44100,
+          ),
+          path: path,
+        );
+        
+        setState(() {
+          _isRecording = true;
+          _recordingPath = path;
+        });
+
+        // Update recording duration
+        _audioRecorder.onAmplitudeChanged((amplitude) {
+          // You can use amplitude for visualization if needed
+        });
+        
+        Timer.periodic(const Duration(seconds: 1), (timer) async {
+          if (_isRecording) {
+            final duration = await _audioRecorder.getDuration();
+            if (duration != null) {
+              setState(() {
+                _recordingDuration = duration;
+              });
+            }
+          } else {
+            timer.cancel();
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("Error starting recording: $e");
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final path = await _audioRecorder.stop();
+      setState(() {
+        _isRecording = false;
+        _recordingPath = path;
+      });
+    } catch (e) {
+      debugPrint("Error stopping recording: $e");
+    }
+  }
+
+  Future<void> _playRecording() async {
+    try {
+      if (_recordingPath != null) {
+        await _audioPlayer.play(DeviceFileSource(_recordingPath!));
+      }
+    } catch (e) {
+      debugPrint("Error playing recording: $e");
+    }
+  }
+
+  Future<void> _stopPlaying() async {
+    try {
+      await _audioPlayer.stop();
+    } catch (e) {
+      debugPrint("Error stopping playback: $e");
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    final twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
+  @override
+  void dispose() {
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
+        title: const Text('Voice Recorder'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('You have pushed the button this many times:'),
+            // Recording status and duration
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              _isRecording ? 'Recording...' : 'Not Recording',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _isRecording ? Colors.red : Colors.grey,
+              ),
             ),
+            const SizedBox(height: 20),
+            Text(
+              _formatDuration(_isRecording ? _recordingDuration : _position),
+              style: const TextStyle(fontSize: 48),
+            ),
+            const SizedBox(height: 40),
+            
+            // Recording controls
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!_isRecording && _recordingPath != null)
+                  IconButton(
+                    onPressed: _isPlaying ? _stopPlaying : _playRecording,
+                    icon: Icon(_isPlaying ? Icons.stop : Icons.play_arrow),
+                    iconSize: 64,
+                    color: Colors.green,
+                  ),
+                const SizedBox(width: 40),
+                IconButton(
+                  onPressed: _isRecording ? _stopRecording : _startRecording,
+                  icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+                  iconSize: 64,
+                  color: _isRecording ? Colors.red : Colors.blue,
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // List of recordings (if you want to add this feature)
+            if (_recordingPath != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Card(
+                  child: ListTile(
+                    title: Text('Recording: ${_recordingPath?.split('/').last}'),
+                    subtitle: Text('Duration: ${_formatDuration(_recordingDuration)}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.play_arrow),
+                      onPressed: _isPlaying ? _stopPlaying : _playRecording,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
