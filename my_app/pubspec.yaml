@@ -11,8 +11,6 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  
-  # Cusboonaysii packages-ka si loo xaliyo error-ka
   record: ^5.2.1
   path_provider: ^2.1.1
   permission_handler: ^11.0.1
