@@ -1,22 +1,18 @@
 name: voice_recorder_app
-description: "A voice recorder Flutter application."
+description: A voice recorder Flutter application.
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.4
+  sdk: ">=3.10.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  
-  # Istag flutter_sound
   flutter_sound: ^9.2.13
-  # Waa inaa sidoo kale isticmaashaa permission_handler
   permission_handler: ^11.0.1
-  # Isto path_provider si aad u keydiso codadka
   path_provider: ^2.1.1
 
 dev_dependencies:
