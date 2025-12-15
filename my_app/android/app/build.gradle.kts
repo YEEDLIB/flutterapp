@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.my_app"
+    namespace = "com.example.voice_recorder_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
